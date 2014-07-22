@@ -1,0 +1,59 @@
+from django.shortcuts import render, get_object_or_404
+
+class EditPerm(object):
+
+    ident = NotImplemented
+
+    def __unicode__(self):
+        return u'%d' % (self.ident)
+
+    def judge(self, creator, application):
+        raise NotImplementedError
+
+
+
+class GeneralPerm(EditPerm):
+
+	ident = 101
+
+	def judge(self, creator, application):
+		app_id = application.id
+		app = get_object_or_404(application, id=app_id)
+		if creator.id != app.creator.id and \
+		    not creator.user.has_perms('account.manager'):
+		        return False
+		return True
+
+
+class MroomPerm(EditPerm):
+
+	ident = 102
+
+	def judge(self, creator, application):
+		app_id = application.id
+		app = get_object_or_404(MeetingRoomApplication, id=app_id)
+
+        if not creator.user.has_perm('account.manager') \
+                and not (app.room == u'307' and \
+                 	creator.user.has_perm('account.Stone1'))\
+                and not (app.room == u'305' and \
+                	creator.user.has_perm('account.Stone)  \                                         
+        return False
+        return True
+
+
+_PERM_SET = [GeneralPerm, MroomPerm]
+_PERM_MAP = {cls.ident: cls for cls in _STRATEGY_SET}
+
+
+def make_strategy_by_ident(ident):
+    """Creates the strategy instance for special room."""
+    if ident not in _STRATEGY_MAP:
+        raise ValueError('unknown strategy with ident %r' % ident)
+    perm_cls = _PERM_MAP[ident]
+    return perm_cls()
+
+def make_strategy_choices():
+    """Creates the Django style choices list."""
+    return tuple( cls.ident for cls in _PERM_SET)
+
